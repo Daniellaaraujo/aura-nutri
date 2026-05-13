@@ -19,8 +19,9 @@ const transporter = nodemailer.createTransport({
 });
 
 async function salvarPedido(dados) {
+  const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
   const auth = new google.auth.GoogleAuth({
-    keyFile: process.env.GOOGLE_CREDENTIALS_FILE,
+    credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
   const sheets = google.sheets({ version: 'v4', auth });
