@@ -12,6 +12,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
+async function gerarNumeroPedido() {
+  const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: 'Sheet1!A:A',
+  });
+  const rows = res.data.values || [];
+  const total = rows.length; // inclui cabeçalho
+  const numero = total; // primeira linha = cabeçalho, pedido 1 = linha 2
+  const ano = new Date().getFullYear();
+  return `AUR-${ano}-${String(numero).padStart(4, '0')}`;
+}
+
 async function salvarPedido(dados) {
   const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
   const auth = new google.auth.GoogleAuth({
@@ -21,25 +39,26 @@ async function salvarPedido(dados) {
   const sheets = google.sheets({ version: 'v4', auth });
   await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: 'Sheet1!A:G',
+    range: 'Sheet1!A:H',
     valueInputOption: 'RAW',
     resource: {
       values: [[
-        dados.data, dados.nome, dados.email,
+        dados.numeroPedido, dados.data, dados.nome, dados.email,
         dados.endereco, dados.valor, dados.status, dados.rastreio || '',
       ]],
     },
   });
 }
 
-async function emailCliente(email, nome, endereco) {
+async function emailCliente(email, nome, endereco, numeroPedido) {
   await resend.emails.send({
     from: 'Aura Nutri <onboarding@resend.dev>',
     to: email,
-    subject: '✅ Pedido confirmado — Aura Nutri',
+    subject: `✅ Pedido ${numeroPedido} confirmado — Aura Nutri`,
     html: `
       <div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
         <h2 style="color:#1A1714;">Obrigada pelo seu pedido, ${nome}!</h2>
+        <p><strong>Número do pedido:</strong> ${numeroPedido}</p>
         <p>Recebemos o seu pagamento com sucesso.</p>
         <p><strong>Produto:</strong> Coenzima Q10 Premium — 200mg · 60 cápsulas</p>
         <p><strong>Endereço de entrega:</strong> ${endereco}</p>
@@ -51,14 +70,15 @@ async function emailCliente(email, nome, endereco) {
   });
 }
 
-async function emailAdmin(nome, email, endereco, valor) {
+async function emailAdmin(nome, email, endereco, valor, numeroPedido) {
   await resend.emails.send({
     from: 'Aura Nutri <onboarding@resend.dev>',
     to: process.env.ADMIN_EMAIL,
-    subject: '🛒 Novo pedido recebido — Aura Nutri',
+    subject: `🛒 Novo pedido ${numeroPedido} — Aura Nutri`,
     html: `
       <div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
         <h2 style="color:#1A1714;">Novo pedido!</h2>
+        <p><strong>Número do pedido:</strong> ${numeroPedido}</p>
         <p><strong>Nome:</strong> ${nome}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Endereço:</strong> ${endereco}</p>
@@ -70,6 +90,7 @@ async function emailAdmin(nome, email, endereco, valor) {
 
 app.post('/criar-checkout', async (req, res) => {
   try {
+    const numeroPedido = await gerarNumeroPedido();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -77,13 +98,14 @@ app.post('/criar-checkout', async (req, res) => {
           currency: 'gbp',
           product_data: {
             name: 'Coenzima Q10 Premium — Aura Nutri',
-            description: '200mg · 60 cápsulas · 2 meses de uso',
+            description: `200mg · 60 cápsulas · 2 meses de uso · Pedido ${numeroPedido}`,
           },
           unit_amount: 1900,
         },
         quantity: 1,
       }],
       mode: 'payment',
+      metadata: { numeroPedido },
       shipping_address_collection: {
         allowed_countries: ['GB', 'PT', 'BR', 'US'],
       },
@@ -119,6 +141,7 @@ app.post('/webhook', async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+    const numeroPedido = session.metadata?.numeroPedido || 'N/A';
     const nome = session.shipping_details?.name || 'Cliente';
     const email = session.customer_details?.email || '';
     const endereco = session.shipping_details?.address
@@ -128,11 +151,11 @@ app.post('/webhook', async (req, res) => {
 
     try {
       await salvarPedido({
-        data: new Date().toLocaleString('pt-BR'),
+        numeroPedido, data: new Date().toLocaleString('pt-BR'),
         nome, email, endereco, valor, status: 'Pago',
       });
-      await emailCliente(email, nome, endereco);
-      await emailAdmin(nome, email, endereco, valor);
+      await emailCliente(email, nome, endereco, numeroPedido);
+      await emailAdmin(nome, email, endereco, valor, numeroPedido);
     } catch (err) {
       console.error('Erro no webhook:', err);
     }
