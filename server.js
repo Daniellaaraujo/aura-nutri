@@ -2,23 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const path = require('path');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { google } = require('googleapis');
 
 const app = express();
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
 
 async function salvarPedido(dados) {
   const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
@@ -41,8 +33,8 @@ async function salvarPedido(dados) {
 }
 
 async function emailCliente(email, nome, endereco) {
-  await transporter.sendMail({
-    from: `"Aura Nutri" <${process.env.GMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Aura Nutri <onboarding@resend.dev>',
     to: email,
     subject: '✅ Pedido confirmado — Aura Nutri',
     html: `
@@ -60,8 +52,8 @@ async function emailCliente(email, nome, endereco) {
 }
 
 async function emailAdmin(nome, email, endereco, valor) {
-  await transporter.sendMail({
-    from: `"Aura Nutri" <${process.env.GMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Aura Nutri <onboarding@resend.dev>',
     to: process.env.ADMIN_EMAIL,
     subject: '🛒 Novo pedido recebido — Aura Nutri',
     html: `
@@ -152,8 +144,8 @@ app.post('/webhook', async (req, res) => {
 app.post('/enviar-rastreio', async (req, res) => {
   const { email, nome, codigo } = req.body;
   try {
-    await transporter.sendMail({
-      from: `"Aura Nutri" <${process.env.GMAIL_USER}>`,
+    await resend.emails.send({
+      from: 'Aura Nutri <onboarding@resend.dev>',
       to: email,
       subject: '📦 Seu pedido foi enviado — Aura Nutri',
       html: `
