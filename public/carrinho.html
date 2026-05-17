@@ -594,8 +594,10 @@
   ];
 
   // ── ESTADO ──
-  let carrinho = {}; // { produto_id: quantidade }
-  let desconto = 0;  // percentual de desconto (0–100)
+  // Carrega carrinho do localStorage (itens adicionados na página inicial)
+  let carrinho = {};
+  try { carrinho = JSON.parse(localStorage.getItem('aura_carrinho') || '{}'); } catch(e) { carrinho = {}; }
+  let desconto = 0;
   let freteValor = 18.90;
 
   const CUPONS = {
@@ -627,6 +629,7 @@
   // ── CARRINHO ──
   function adicionarAoCarrinho(id) {
     carrinho[id] = (carrinho[id] || 0) + 1;
+    localStorage.setItem('aura_carrinho', JSON.stringify(carrinho));
     const btn = document.getElementById('btn-add-' + id);
     if (btn) {
       btn.textContent = '✓ Adicionado';
@@ -645,11 +648,13 @@
     if (!carrinho[id]) return;
     carrinho[id] += delta;
     if (carrinho[id] <= 0) delete carrinho[id];
+    localStorage.setItem('aura_carrinho', JSON.stringify(carrinho));
     renderCarrinho();
   }
 
   function removerItem(id) {
     delete carrinho[id];
+    localStorage.setItem('aura_carrinho', JSON.stringify(carrinho));
     renderCarrinho();
   }
 
@@ -811,6 +816,7 @@
 
       // Redireciona para a página de pagamento do Stripe
       if (data.url) {
+        localStorage.removeItem('aura_carrinho');
         window.location.href = data.url;
       } else {
         throw new Error('URL de checkout não retornada');
