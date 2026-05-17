@@ -4,13 +4,100 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const path = require('path');
 const { Resend } = require('resend');
 const { google } = require('googleapis');
+const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Conexão com PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
+
+// ─── CLIENTES ────────────────────────────────────────────
+
+// CADASTRO
+app.post('/api/cadastro', async (req, res) => {
+  try {
+    const { nome, email, senha, telefone } = req.body;
+    const senha_hash = await bcrypt.hash(senha, 10);
+    const resultado = await pool.query(
+      `INSERT INTO clientes (nome, email, senha_hash, telefone)
+       VALUES ($1, $2, $3, $4) RETURNING id, nome, email`,
+      [nome, email, senha_hash, telefone]
+    );
+    res.status(201).json(resultado.rows[0]);
+  } catch (erro) {
+    if (erro.code === '23505') {
+      return res.status(400).json({ erro: 'E-mail já cadastrado' });
+    }
+    res.status(500).json({ erro: 'Erro ao cadastrar' });
+  }
+});
+
+// LOGIN
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    const resultado = await pool.query(
+      'SELECT * FROM clientes WHERE email = $1', [email]
+    );
+    if (resultado.rows.length === 0) {
+      return res.status(401).json({ erro: 'E-mail ou senha incorretos' });
+    }
+    const cliente = resultado.rows[0];
+    const senhaCorreta = await bcrypt.compare(senha, cliente.senha_hash);
+    if (!senhaCorreta) {
+      return res.status(401).json({ erro: 'E-mail ou senha incorretos' });
+    }
+    const token = jwt.sign(
+      { id: cliente.id, email: cliente.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    res.json({ token, nome: cliente.nome, id: cliente.id });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao fazer login' });
+  }
+});
+
+// SALVAR ENDEREÇO
+app.post('/api/endereco', async (req, res) => {
+  try {
+    const { cliente_id, rua, numero, complemento, bairro, cidade, estado, cep } = req.body;
+    const resultado = await pool.query(
+      `INSERT INTO enderecos (cliente_id, rua, numero, complemento, bairro, cidade, estado, cep)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [cliente_id, rua, numero, complemento, bairro, cidade, estado, cep]
+    );
+    res.status(201).json(resultado.rows[0]);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao salvar endereço' });
+  }
+});
+
+// BUSCAR PEDIDOS DO CLIENTE
+app.get('/api/pedidos/:cliente_id', async (req, res) => {
+  try {
+    const { cliente_id } = req.params;
+    const resultado = await pool.query(
+      `SELECT * FROM pedidos_aura WHERE cliente_id = $1 ORDER BY criado_em DESC`,
+      [cliente_id]
+    );
+    res.json(resultado.rows);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar pedidos' });
+  }
+});
+
+// ─── GOOGLE SHEETS ───────────────────────────────────────
 
 async function gerarNumeroPedido() {
   const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
@@ -24,13 +111,13 @@ async function gerarNumeroPedido() {
     range: 'Sheet1!A:A',
   });
   const rows = res.data.values || [];
-  const total = rows.length; // inclui cabeçalho
-  const numero = total; // primeira linha = cabeçalho, pedido 1 = linha 2
+  const total = rows.length;
   const ano = new Date().getFullYear();
-  return `AUR-${ano}-${String(numero).padStart(4, '0')}`;
+  return `AUR-${ano}-${String(total).padStart(4, '0')}`;
 }
 
 async function salvarPedido(dados) {
+  // Salva no Google Sheets
   const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -48,7 +135,22 @@ async function salvarPedido(dados) {
       ]],
     },
   });
+
+  // Salva também no PostgreSQL
+  try {
+    await pool.query(
+      `INSERT INTO pedidos_aura 
+       (numero_pedido, nome, email, endereco, valor, status, data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [dados.numeroPedido, dados.nome, dados.email,
+       dados.endereco, dados.valor, dados.status, dados.data]
+    );
+  } catch (err) {
+    console.error('Erro ao salvar no PostgreSQL:', err);
+  }
 }
+
+// ─── EMAILS ──────────────────────────────────────────────
 
 async function emailCliente(email, nome, endereco, numeroPedido) {
   await resend.emails.send({
@@ -62,7 +164,7 @@ async function emailCliente(email, nome, endereco, numeroPedido) {
         <p>Recebemos o seu pagamento com sucesso.</p>
         <p><strong>Produto:</strong> Coenzima Q10 Premium — 200mg · 60 cápsulas</p>
         <p><strong>Endereço de entrega:</strong> ${endereco}</p>
-        <p>Seu pedido será enviado em até 2 dias úteis. Você receberá o código de rastreio por email.</p>
+        <p>Seu pedido será enviado em até 2 dias úteis.</p>
         <br>
         <p style="color:#8A827A;font-size:0.85rem;">Aura Nutri — Suplementos Premium</p>
       </div>
@@ -87,6 +189,8 @@ async function emailAdmin(nome, email, endereco, valor, numeroPedido) {
     `,
   });
 }
+
+// ─── STRIPE ──────────────────────────────────────────────
 
 app.post('/criar-checkout', async (req, res) => {
   try {
