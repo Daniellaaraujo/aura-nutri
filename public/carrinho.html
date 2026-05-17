@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aura Nutri — Carrinho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F8F4EE;
+      --warm-white: #FDFAF6;
+      --gold: #C9A96E;
+      --gold-dark: #A07840;
+      --gold-light: #EDE0CC;
+      --text-dark: #2C2520;
+      --text-mid: #6B5E54;
+      --text-light: #A89A8E;
+      --border: #E4D9CC;
+      --red: #C0392B;
+      --success: #2E7D32;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--cream);
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--warm-white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: var(--text-dark);
+      text-decoration: none;
+    }
+    .logo span { color: var(--gold); }
+    .header-back {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .header-back:hover { color: var(--gold-dark); }
+    .header-back svg { width: 14px; height: 14px; }
+
+    /* ── MAIN LAYOUT ── */
+    .page-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      padding: 2.5rem 2rem 0.5rem;
+      color: var(--text-dark);
+    }
+    .page-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      letter-spacing: 0.06em;
+      padding: 0 2rem 2rem;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2rem;
+      padding: 0 2rem 4rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 860px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── PRODUTOS ── */
+    .section-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .product-card {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+    .product-img {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem;
+      color: var(--gold-dark);
+      letter-spacing: 0.04em;
+    }
+    .product-info { padding: 1rem; }
+    .product-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 2px;
+    }
+    .product-desc {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-bottom: 0.75rem;
+      line-height: 1.5;
+    }
+    .product-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .product-price {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    .btn-add {
+      background: var(--gold);
+      color: var(--warm-white);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: var(--gold-dark); }
+    .btn-add.added {
+      background: var(--success);
+    }
+
+    /* ── CARRINHO ── */
+    .cart-panel {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: sticky;
+      top: 1.5rem;
+      height: fit-content;
+    }
+    .cart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .cart-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+    }
+    .cart-count {
+      background: var(--gold);
+      color: white;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 2px 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .cart-empty {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-light);
+      font-size: 0.85rem;
+      font-style: italic;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+
+    .cart-items { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--cream);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .cart-item-emoji {
+      font-size: 1.5rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gold-light);
+      border-radius: 8px;
+      flex-shrink: 0;
+      font-family: 'Cormorant Garamond', serif;
+      color: var(--gold-dark);
+      font-size: 1.1rem;
+    }
+    .cart-item-info { flex: 1; min-width: 0; }
+    .cart-item-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-item-unit {
+      font-size: 0.72rem;
+      color: var(--text-light);
+    }
+    .cart-item-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .qty-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--border);
+      background: var(--warm-white);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-mid);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .qty-btn:hover { background: var(--gold-light); border-color: var(--gold); }
+    .qty-num {
+      font-size: 0.82rem;
+      font-weight: 500;
+      min-width: 18px;
+      text-align: center;
+    }
+    .btn-remove {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px;
+      transition: color 0.2s;
+    }
+    .btn-remove:hover { color: var(--red); }
+
+    /* ── TOTAIS ── */
+    .cart-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      margin-bottom: 0.5rem;
+    }
+    .totals-row.total {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      margin-top: 0.75rem;
+    }
+    .totals-row.total .val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+    }
+
+    /* ── CUPOM ── */
+    .coupon-row {
+      display: flex;
+      gap: 8px;
+      margin: 1rem 0;
+    }
+    .coupon-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-dark);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .coupon-input:focus { border-color: var(--gold); }
+    .btn-coupon {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.76rem;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.06em;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-coupon:hover { border-color: var(--gold); color: var(--gold-dark); }
+    .coupon-msg {
+      font-size: 0.72rem;
+      margin-top: -0.25rem;
+      margin-bottom: 0.5rem;
+      display: none;
+    }
+    .coupon-msg.success { color: var(--success); display: block; }
+    .coupon-msg.error { color: var(--red); display: block; }
+
+    /* ── FRETE ── */
+    .frete-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 1rem 0;
+    }
+    .frete-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.15s;
+      font-size: 0.8rem;
+    }
+    .frete-option:hover { border-color: var(--gold); }
+    .frete-option.selected {
+      border-color: var(--gold);
+      background: #FAF6F0;
+    }
+    .frete-option input[type="radio"] { accent-color: var(--gold); }
+    .frete-option-info { flex: 1; }
+    .frete-option-name { font-weight: 500; color: var(--text-dark); }
+    .frete-option-prazo { color: var(--text-light); font-size: 0.72rem; }
+    .frete-option-price { font-weight: 500; color: var(--text-dark); }
+    .frete-option-price.gratis { color: var(--success); }
+
+    /* ── BOTÃO CHECKOUT ── */
+    .btn-checkout {
+      width: 100%;
+      background: var(--text-dark);
+      color: var(--warm-white);
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-checkout:hover:not(:disabled) { background: var(--gold-dark); }
+    .btn-checkout:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-checkout.loading { opacity: 0.7; pointer-events: none; }
+
+    .secure-note {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-light);
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .secure-note svg { width: 11px; height: 11px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(40px);
+      background: var(--text-dark);
+      color: var(--warm-white);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 100;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">AURA <span>NUTRI</span></a>
+  <a href="/" class="header-back">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 12L6 8l4-4"/></svg>
+    Continuar comprando
+  </a>
+</header>
+
+<h1 class="page-title">Seu carrinho</h1>
+<p class="page-subtitle" id="cart-summary-text">Nenhum produto selecionado</p>
+
+<div class="main-grid">
+
+  <!-- COLUNA ESQUERDA: Produtos -->
+  <div>
+    <p class="section-label">Nossos produtos</p>
+    <div class="products-grid" id="products-grid">
+      <!-- Renderizado via JS -->
+    </div>
+  </div>
+
+  <!-- COLUNA DIREITA: Carrinho -->
+  <div>
+    <div class="cart-panel">
+      <div class="cart-header">
+        <span class="cart-title">Carrinho</span>
+        <span class="cart-count" id="cart-count">0 itens</span>
+      </div>
+
+      <div id="cart-empty" class="cart-empty">
+        Adicione produtos ao carrinho para continuar.
+      </div>
+
+      <div id="cart-items" class="cart-items" style="display:none"></div>
+
+      <div id="cart-details" style="display:none">
+
+        <!-- Cupom -->
+        <hr class="cart-divider"/>
+        <p class="section-label">Cupom de desconto</p>
+        <div class="coupon-row">
+          <input type="text" class="coupon-input" id="coupon-input" placeholder="Seu cupom"/>
+          <button class="btn-coupon" onclick="aplicarCupom()">Aplicar</button>
+        </div>
+        <p class="coupon-msg" id="coupon-msg"></p>
+
+        <!-- Frete -->
+        <hr class="cart-divider"/>
+        <p class="section-label">Frete</p>
+        <div class="frete-options">
+          <label class="frete-option selected" id="frete-pac">
+            <input type="radio" name="frete" value="pac" checked onchange="selecionarFrete(this)"/>
+            <div class="frete-option-info">
+              <div class="frete-option-name">PAC</div>
+              <div class="frete-option-prazo">8–12 dias úteis</div>
+            </div>
+            <span class="frete-option-price" id="price-pac">R$ 18,90</span>
+          </label>
+          <label class="frete-option" id="frete-sedex">
+            <input type="radio" name="frete" value="sedex" onchange="selecionarFrete(this)"/>
+            <div class="frete-option-info">
+              <div class="frete-option-name">SEDEX</div>
+              <div class="frete-option-prazo">2–4 dias úteis</div>
+            </div>
+            <span class="frete-option-price" id="price-sedex">R$ 34,90</span>
+          </label>
+        </div>
+
+        <!-- Totais -->
+        <hr class="cart-divider"/>
+        <div class="totals-row">
+          <span>Subtotal</span>
+          <span id="subtotal-val">R$ 0,00</span>
+        </div>
+        <div class="totals-row" id="desconto-row" style="display:none">
+          <span>Desconto</span>
+          <span id="desconto-val" style="color:var(--success)">– R$ 0,00</span>
+        </div>
+        <div class="totals-row">
+          <span>Frete</span>
+          <span id="frete-val">R$ 18,90</span>
+        </div>
+        <div class="totals-row total">
+          <span>Total</span>
+          <span class="val" id="total-val">R$ 0,00</span>
+        </div>
+
+        <button class="btn-checkout" id="btn-checkout" onclick="irParaCheckout()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Finalizar compra
+        </button>
+
+        <p class="secure-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Pagamento seguro via Stripe
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── DADOS DOS PRODUTOS ──
+  // Edite esta lista para adicionar/remover produtos
+  const PRODUTOS = [
+    {
+      id: 'coenzima-q10',
+      nome: 'Coenzima Q10',
+      descricao: 'Antioxidante premium, 200mg por cápsula.',
+      preco: 190.00,
+      emoji: 'Q10',
+      // stripe_price_id: 'price_xxxx' // descomente quando tiver os IDs do Stripe
+    },
+    {
+      id: 'colageno-marino',
+      nome: 'Colágeno Marinho',
+      descricao: 'Hidrolisado tipo I e II, 10g por dose.',
+      preco: 145.00,
+      emoji: 'CM',
+    },
+    {
+      id: 'vitamina-d3',
+      nome: 'Vitamina D3 + K2',
+      descricao: 'Sinergia ideal para ossos e imunidade.',
+      preco: 89.00,
+      emoji: 'D3',
+    },
+    {
+      id: 'omega-3',
+      nome: 'Ômega-3 Ultra',
+      descricao: 'Alta concentração de EPA + DHA, sem sabor.',
+      preco: 120.00,
+      emoji: 'Ω3',
+    },
+    {
+      id: 'magnesio',
+      nome: 'Magnésio Quelato',
+      descricao: 'Alta biodisponibilidade, sem laxante.',
+      preco: 75.00,
+      emoji: 'Mg',
+    },
+  ];
+
+  // ── ESTADO ──
+  let carrinho = {}; // { produto_id: quantidade }
+  let desconto = 0;  // percentual de desconto (0–100)
+  let freteValor = 18.90;
+
+  const CUPONS = {
+    'AURA10': 10,
+    'BEMVINDO15': 15,
+    'NUTRI20': 20,
+  };
+
+  // ── RENDERIZAR PRODUTOS ──
+  function renderProdutos() {
+    const grid = document.getElementById('products-grid');
+    grid.innerHTML = PRODUTOS.map(p => `
+      <div class="product-card" onclick="adicionarAoCarrinho('${p.id}')">
+        <div class="product-img">${p.emoji}</div>
+        <div class="product-info">
+          <div class="product-name">${p.nome}</div>
+          <div class="product-desc">${p.descricao}</div>
+          <div class="product-footer">
+            <span class="product-price">R$ ${p.preco.toFixed(2).replace('.', ',')}</span>
+            <button class="btn-add" id="btn-add-${p.id}" onclick="event.stopPropagation(); adicionarAoCarrinho('${p.id}')">
+              + Adicionar
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── CARRINHO ──
+  function adicionarAoCarrinho(id) {
+    carrinho[id] = (carrinho[id] || 0) + 1;
+    const btn = document.getElementById('btn-add-' + id);
+    if (btn) {
+      btn.textContent = '✓ Adicionado';
+      btn.classList.add('added');
+      setTimeout(() => {
+        btn.textContent = '+ Adicionar';
+        btn.classList.remove('added');
+      }, 1200);
+    }
+    const prod = PRODUTOS.find(p => p.id === id);
+    mostrarToast(prod.nome + ' adicionado!');
+    renderCarrinho();
+  }
+
+  function alterarQtd(id, delta) {
+    if (!carrinho[id]) return;
+    carrinho[id] += delta;
+    if (carrinho[id] <= 0) delete carrinho[id];
+    renderCarrinho();
+  }
+
+  function removerItem(id) {
+    delete carrinho[id];
+    renderCarrinho();
+  }
+
+  function renderCarrinho() {
+    const ids = Object.keys(carrinho);
+    const totalItens = ids.reduce((s, id) => s + carrinho[id], 0);
+
+    document.getElementById('cart-count').textContent =
+      totalItens === 0 ? '0 itens' : totalItens === 1 ? '1 item' : totalItens + ' itens';
+
+    const summaryEl = document.getElementById('cart-summary-text');
+    summaryEl.textContent = totalItens === 0
+      ? 'Nenhum produto selecionado'
+      : totalItens + (totalItens === 1 ? ' produto no carrinho' : ' produtos no carrinho');
+
+    const emptyEl = document.getElementById('cart-empty');
+    const itemsEl = document.getElementById('cart-items');
+    const detailsEl = document.getElementById('cart-details');
+    const btnCheckout = document.getElementById('btn-checkout');
+
+    if (ids.length === 0) {
+      emptyEl.style.display = 'block';
+      itemsEl.style.display = 'none';
+      detailsEl.style.display = 'none';
+    } else {
+      emptyEl.style.display = 'none';
+      itemsEl.style.display = 'flex';
+      detailsEl.style.display = 'block';
+
+      itemsEl.innerHTML = ids.map(id => {
+        const prod = PRODUTOS.find(p => p.id === id);
+        const qty = carrinho[id];
+        return `
+          <div class="cart-item">
+            <div class="cart-item-emoji">${prod.emoji}</div>
+            <div class="cart-item-info">
+              <div class="cart-item-name">${prod.nome}</div>
+              <div class="cart-item-unit">R$ ${prod.preco.toFixed(2).replace('.', ',')} / un.</div>
+            </div>
+            <div class="cart-item-controls">
+              <button class="qty-btn" onclick="alterarQtd('${id}', -1)">−</button>
+              <span class="qty-num">${qty}</span>
+              <button class="qty-btn" onclick="alterarQtd('${id}', 1)">+</button>
+              <button class="btn-remove" onclick="removerItem('${id}')" title="Remover">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    atualizarTotais();
+  }
+
+  function atualizarTotais() {
+    const ids = Object.keys(carrinho);
+    const subtotal = ids.reduce((s, id) => {
+      const prod = PRODUTOS.find(p => p.id === id);
+      return s + (prod.preco * carrinho[id]);
+    }, 0);
+
+    const descontoVal = subtotal * (desconto / 100);
+    const freteDisplay = subtotal >= 299 ? 0 : freteValor;
+    const total = subtotal - descontoVal + freteDisplay;
+
+    document.getElementById('subtotal-val').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+    document.getElementById('frete-val').textContent = freteDisplay === 0
+      ? 'Grátis 🎉'
+      : 'R$ ' + freteDisplay.toFixed(2).replace('.', ',');
+    document.getElementById('total-val').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+    // Exibir frete grátis na opção PAC se subtotal >= 299
+    const pacPrice = document.getElementById('price-pac');
+    if (subtotal >= 299) {
+      pacPrice.textContent = 'Grátis';
+      pacPrice.classList.add('gratis');
+    } else {
+      pacPrice.textContent = 'R$ 18,90';
+      pacPrice.classList.remove('gratis');
+    }
+
+    const descontoRow = document.getElementById('desconto-row');
+    if (descontoVal > 0) {
+      descontoRow.style.display = 'flex';
+      document.getElementById('desconto-val').textContent = '− R$ ' + descontoVal.toFixed(2).replace('.', ',');
+    } else {
+      descontoRow.style.display = 'none';
+    }
+  }
+
+  // ── CUPOM ──
+  function aplicarCupom() {
+    const codigo = document.getElementById('coupon-input').value.trim().toUpperCase();
+    const msg = document.getElementById('coupon-msg');
+    if (CUPONS[codigo]) {
+      desconto = CUPONS[codigo];
+      msg.textContent = '✓ Cupom aplicado! ' + desconto + '% de desconto.';
+      msg.className = 'coupon-msg success';
+    } else {
+      desconto = 0;
+      msg.textContent = 'Cupom inválido ou expirado.';
+      msg.className = 'coupon-msg error';
+    }
+    atualizarTotais();
+  }
+
+  // ── FRETE ──
+  function selecionarFrete(radio) {
+    document.querySelectorAll('.frete-option').forEach(el => el.classList.remove('selected'));
+    radio.closest('.frete-option').classList.add('selected');
+    freteValor = radio.value === 'sedex' ? 34.90 : 18.90;
+    atualizarTotais();
+  }
+
+  // ── CHECKOUT ──
+  async function irParaCheckout() {
+    const ids = Object.keys(carrinho);
+    if (ids.length === 0) return;
+
+    const btn = document.getElementById('btn-checkout');
+    btn.classList.add('loading');
+    btn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" stroke-dasharray="40" stroke-dashoffset="20">
+          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+      Redirecionando...
+    `;
+
+    // Montar lista de itens para o backend
+    const itens = ids.map(id => {
+      const prod = PRODUTOS.find(p => p.id === id);
+      return {
+        produto_id: id,
+        nome: prod.nome,
+        preco: prod.preco,
+        quantidade: carrinho[id],
+        // stripe_price_id: prod.stripe_price_id // descomente quando tiver os IDs
+      };
+    });
+
+    try {
+      const res = await fetch('/criar-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Se o cliente estiver logado, inclua o token:
+          // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({
+          itens,
+          frete: freteValor,
+          cupom: document.getElementById('coupon-input').value.trim().toUpperCase() || null,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Erro ao criar sessão de checkout');
+      const data = await res.json();
+
+      // Redireciona para a página de pagamento do Stripe
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('URL de checkout não retornada');
+      }
+    } catch (err) {
+      console.error(err);
+      mostrarToast('Erro ao redirecionar. Tente novamente.');
+      btn.classList.remove('loading');
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Finalizar compra
+      `;
+    }
+  }
+
+  // ── TOAST ──
+  function mostrarToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  // ── INIT ──
+  renderProdutos();
+  renderCarrinho();
+</script>
+</body>
+</html>
