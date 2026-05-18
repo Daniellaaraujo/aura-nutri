@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura Nutri — Painel Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0f0e;
+      --surface:   #141714;
+      --card:      #1b1e1b;
+      --border:    #2a2e2a;
+      --accent:    #b5f23a;
+      --accent2:   #5dde8a;
+      --warn:      #f2a93a;
+      --danger:    #f25a5a;
+      --text:      #e8ede8;
+      --muted:     #7a8a7a;
+      --radius:    12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, #1e3320 0%, var(--bg) 70%);
+    }
+
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #0d0f0e;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity .15s, transform .1s;
+    }
+
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary:active { transform: scale(.98); }
+
+    .login-erro {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+    }
+
+    .sidebar-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--accent);
+      padding: 0 24px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo span {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .nav { margin-top: 24px; flex: 1; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 24px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
+    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(181,242,58,.05); }
+
+    .nav-icon { font-size: 16px; }
+
+    .sidebar-logout {
+      padding: 0 16px 4px;
+    }
+
+    .btn-logout {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Main */
+    .main {
+      margin-left: 220px;
+      padding: 36px 40px;
+      min-height: 100vh;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .page-sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    /* Cards de resumo */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-accent { color: var(--accent); }
+
+    /* Filtros */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { background: var(--accent); color: #0d0f0e; border-color: var(--accent); font-weight: 600; }
+
+    /* Tabela de pedidos */
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: var(--surface);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      font-weight: 500;
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px 18px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.015); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-pago      { background: rgba(93,222,138,.15); color: var(--accent2); }
+    .badge-enviado   { background: rgba(181,242,58,.15); color: var(--accent); }
+    .badge-entregue  { background: rgba(93,222,138,.25); color: #7fffaa; }
+    .badge-pendente  { background: rgba(242,169,58,.15); color: var(--warn); }
+    .badge-cancelado { background: rgba(242,90,90,.15);  color: var(--danger); }
+
+    .btn-sm {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity .15s;
+      border: none;
+    }
+
+    .btn-sm:hover { opacity: .8; }
+
+    .btn-edit { background: rgba(181,242,58,.15); color: var(--accent); }
+    .btn-danger { background: rgba(242,90,90,.15); color: var(--danger); }
+
+    /* Modal de edição */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .modal-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    /* Estoque */
+    .stock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .stock-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .stock-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .stock-price {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .stock-qty {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stock-qty.low { color: var(--danger); }
+    .stock-qty.mid { color: var(--warn); }
+    .stock-qty.ok  { color: var(--accent2); }
+
+    .stock-qty-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 16px;
+    }
+
+    .stock-edit-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stock-edit-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .stock-edit-row input:focus { border-color: var(--accent); }
+
+    .btn-save {
+      padding: 8px 14px;
+      background: var(--accent);
+      color: #0d0f0e;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Paginação */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    .page-btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .page-btn:disabled { opacity: .3; cursor: default; }
+    .page-btn.current { background: var(--accent); color: #0d0f0e; border-color: var(--accent); font-weight: 600; }
+
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--accent);
+      color: #0d0f0e;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .25s;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ LOGIN ══════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Aura Nutri</div>
+    <div class="login-sub">Painel Administrativo</div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="admin@auranutri.com" />
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+    <p class="login-erro" id="login-erro">E-mail ou senha incorretos.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ DASHBOARD ═══════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      Aura Nutri
+      <span>Admin</span>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="mostrarPagina('pedidos', this)">
+        <span class="nav-icon">📦</span> Pedidos
+      </div>
+      <div class="nav-item" onclick="mostrarPagina('estoque', this)">
+        <span class="nav-icon">🗃️</span> Estoque
+      </div>
+    </nav>
+    <div class="sidebar-logout">
+      <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <main class="main">
+
+    <!-- ── Página: Pedidos ── -->
+    <section id="page-pedidos" class="page active">
+      <h1 class="page-title">Pedidos</h1>
+      <p class="page-sub">Gerencie todos os pedidos da loja.</p>
+
+      <div class="stats-grid" id="stats-pedidos">
+        <div class="stat-card">
+          <div class="stat-label">Total de pedidos</div>
+          <div class="stat-value stat-accent" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aguardando envio</div>
+          <div class="stat-value" id="stat-pago">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Enviados</div>
+          <div class="stat-value" id="stat-enviado">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Entregues</div>
+          <div class="stat-value" id="stat-entregue">—</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <button class="filter-btn active" onclick="filtrar('', this)">Todos</button>
+        <button class="filter-btn" onclick="filtrar('pendente', this)">Pendente</button>
+        <button class="filter-btn" onclick="filtrar('pago', this)">Pago</button>
+        <button class="filter-btn" onclick="filtrar('enviado', this)">Enviado</button>
+        <button class="filter-btn" onclick="filtrar('entregue', this)">Entregue</button>
+        <button class="filter-btn" onclick="filtrar('cancelado', this)">Cancelado</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th>Produtos</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Rastreio</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-pedidos">
+            <tr><td colspan="8" class="loading">Carregando pedidos…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="paginacao"></div>
+    </section>
+
+    <!-- ── Página: Estoque ── -->
+    <section id="page-estoque" class="page">
+      <h1 class="page-title">Estoque</h1>
+      <p class="page-sub">Visualize e atualize a quantidade em estoque de cada produto.</p>
+      <div class="stock-grid" id="lista-estoque">
+        <div class="loading">Carregando produtos…</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modal de edição de pedido -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Editar Pedido <span id="modal-id"></span></div>
+    <input type="hidden" id="modal-pedido-id" />
+    <div class="field">
+      <label>Status</label>
+      <select id="modal-status">
+        <option value="pendente">Pendente</option>
+        <option value="pago">Pago</option>
+        <option value="enviado">Enviado</option>
+        <option value="entregue">Entregue</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>Código de Rastreio</label>
+      <input type="text" id="modal-rastreio" placeholder="Ex: BR123456789" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" style="max-width:140px" onclick="salvarPedido()">Salvar</button>
+      <button class="btn-primary" style="max-width:100px;background:var(--surface);color:var(--text);border:1px solid var(--border)" onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = ''; // deixa vazio — usa URL relativa (mesmo domínio)
+  let token = localStorage.getItem('admin_token') || '';
+  let paginaAtual = 1;
+  let filtroAtual = '';
+
+  // ─── Auth ──────────────────────────────────────────────────────────────────
+  async function fazerLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const erro  = document.getElementById('login-erro');
+    erro.style.display = 'none';
+
+    try {
+      const resp = await fetch(`${API}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      if (!resp.ok) throw new Error();
+      const data = await resp.json();
+      token = data.token;
+      localStorage.setItem('admin_token', token);
+      mostrarDashboard();
+    } catch {
+      erro.style.display = 'block';
+    }
+  }
+
+  function sair() {
+    localStorage.removeItem('admin_token');
+    token = '';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function mostrarDashboard() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    carregarPedidos();
+    carregarStats();
+  }
+
+  // ─── Navegação ─────────────────────────────────────────────────────────────
+  function mostrarPagina(nome, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${nome}`).classList.add('active');
+    el.classList.add('active');
+    if (nome === 'estoque') carregarEstoque();
+  }
+
+  // ─── Filtros ───────────────────────────────────────────────────────────────
+  function filtrar(status, el) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    filtroAtual = status;
+    paginaAtual = 1;
+    carregarPedidos();
+  }
+
+  // ─── Pedidos ───────────────────────────────────────────────────────────────
+  async function carregarPedidos() {
+    const tbody = document.getElementById('tabela-pedidos');
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Carregando…</td></tr>';
+
+    const params = new URLSearchParams({ pagina: paginaAtual });
+    if (filtroAtual) params.set('status', filtroAtual);
+
+    try {
+      const resp = await fetch(`${API}/api/admin/pedidos?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (resp.status === 401) return sair();
+      const data = await resp.json();
+
+      if (!data.pedidos.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="loading">Nenhum pedido encontrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.pedidos.map(p => `
+        <tr>
+          <td>#${p.id}</td>
+          <td>
+            <div style="font-weight:500">${esc(p.cliente_nome)}</div>
+            <div style="font-size:12px;color:var(--muted)">${esc(p.cliente_email)}</div>
+          </td>
+          <td style="max-width:200px;font-size:13px">
+            ${p.itens.map(i => `${i.nome} ×${i.quantidade}`).join('<br>')}
+          </td>
+          <td>R$ ${parseFloat(p.total).toFixed(2)}</td>
+          <td><span class="badge badge-${p.status}">${p.status}</span></td>
+          <td style="font-size:13px">${p.codigo_rastreio ? `<code>${esc(p.codigo_rastreio)}</code>` : '<span style="color:var(--muted)">—</span>'}</td>
+          <td style="font-size:12px;color:var(--muted)">${new Date(p.criado_em).toLocaleDateString('pt-BR')}</td>
+          <td>
+            <button class="btn-sm btn-edit" onclick="abrirModal(${p.id}, '${p.status}', '${p.codigo_rastreio || ''}')">
+              Editar
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      renderizarPaginacao(data.paginas, data.pagina_atual);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar pedidos.</td></tr>';
+    }
+  }
+
+  async function carregarStats() {
+    const todos     = await contarStatus('');
+    const pagos     = await contarStatus('pago');
+    const enviados  = await contarStatus('enviado');
+    const entregues = await contarStatus('entregue');
+
+    document.getElementById('stat-total').textContent    = todos;
+    document.getElementById('stat-pago').textContent     = pagos;
+    document.getElementById('stat-enviado').textContent  = enviados;
+    document.getElementById('stat-entregue').textContent = entregues;
+  }
+
+  async function contarStatus(status) {
+    try {
+      const params = status ? `?status=${status}` : '';
+      const resp = await fetch(`${API}/api/admin/pedidos${params}&pagina=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json();
+      return data.total || 0;
+    } catch { return '—'; }
+  }
+
+  // ─── Modal ─────────────────────────────────────────────────────────────────
+  function abrirModal(id, status, rastreio) {
+    document.getElementById('modal-pedido-id').value = id;
+    document.getElementById('modal-id').textContent  = `#${id}`;
+    document.getElementById('modal-status').value    = status;
+    document.getElementById('modal-rastreio').value  = rastreio;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  async function salvarPedido() {
+    const id       = document.getElementById('modal-pedido-id').value;
+    const status   = document.getElementById('modal-status').value;
+    const rastreio = document.getElementById('modal-rastreio').value.trim();
+
+    try {
+      const resp = await fetch(`${API}/api/admin/pedidos/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status, codigo_rastreio: rastreio }),
+      });
+
+      if (!resp.ok) throw new Error();
+      fecharModal();
+      carregarPedidos();
+      mostrarToast('Pedido atualizado!');
+    } catch {
+      mostrarToast('Erro ao atualizar pedido.');
+    }
+  }
+
+  // ─── Paginação ─────────────────────────────────────────────────────────────
+  function renderizarPaginacao(total, atual) {
+    const el = document.getElementById('paginacao');
+    if (total <= 1) { el.innerHTML = ''; return; }
+    let html = `<button class="page-btn" ${atual === 1 ? 'disabled' : ''} onclick="mudarPagina(${atual - 1})">← Anterior</button>`;
+    for (let i = 1; i <= total; i++) {
+      html += `<button class="page-btn ${i === atual ? 'current' : ''}" onclick="mudarPagina(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" ${atual === total ? 'disabled' : ''} onclick="mudarPagina(${atual + 1})">Próxima →</button>`;
+    el.innerHTML = html;
+  }
+
+  function mudarPagina(p) {
+    paginaAtual = p;
+    carregarPedidos();
+  }
+
+  // ─── Estoque ───────────────────────────────────────────────────────────────
+  async function carregarEstoque() {
+    const el = document.getElementById('lista-estoque');
+    el.innerHTML = '<div class="loading">Carregando…</div>';
+
+    try {
+      const resp = await fetch(`${API}/api/admin/produtos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const produtos = await resp.json();
+
+      el.innerHTML = produtos.map(p => {
+        const nivel = p.estoque <= 5 ? 'low' : p.estoque <= 15 ? 'mid' : 'ok';
+        return `
+          <div class="stock-card">
+            <div class="stock-name">${esc(p.nome)}</div>
+            <div class="stock-price">R$ ${parseFloat(p.preco).toFixed(2)}</div>
+            <div class="stock-qty ${nivel}">${p.estoque}</div>
+            <div class="stock-qty-label">unidades em estoque</div>
+            <div class="stock-edit-row">
+              <input type="number" id="est-${p.id}" min="0" placeholder="Nova qtd" />
+              <button class="btn-save" onclick="atualizarEstoque(${p.id})">Salvar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch {
+      el.innerHTML = '<div class="loading">Erro ao carregar produtos.</div>';
+    }
+  }
+
+  async function atualizarEstoque(id) {
+    const input = document.getElementById(`est-${id}`);
+    const valor = parseInt(input.value);
+    if (isNaN(valor) || valor < 0) return;
+
+    try {
+      const resp = await fetch(`${API}/api/admin/produtos/${id}/estoque`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ estoque: valor }),
+      });
+
+      if (!resp.ok) throw new Error();
+      input.value = '';
+      carregarEstoque();
+      mostrarToast('Estoque atualizado!');
+    } catch {
+      mostrarToast('Erro ao atualizar estoque.');
+    }
+  }
+
+  // ─── Utilitários ───────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ─── Init: verifica se já tem token salvo ──────────────────────────────────
+  if (token) {
+    mostrarDashboard();
+  }
+
+  // Fechar modal clicando fora
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) fecharModal();
+  });
+
+  // Enter no login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+      fazerLogin();
+    }
+  });
+</script>
+</body>
+</html>

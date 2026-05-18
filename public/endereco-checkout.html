@@ -642,7 +642,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-https://backend-suplementos-0ul1.onrender.com/criar-checkout
+        const res = await fetch('https://backend-suplementos-0ul1.onrender.com/criar-checkout', {
           method: 'POST',
           headers,
           body: JSON.stringify({

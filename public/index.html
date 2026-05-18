@@ -701,7 +701,7 @@
       btn.textContent = 'Criando conta...';
 
       try {
-        const resposta = await fetch('/api/cadastro', {
+        const resposta = await fetch('/api/clientes/cadastro', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nome, email, senha, telefone })
@@ -747,7 +747,7 @@
       btn.textContent = 'Entrando...';
 
       try {
-        const resposta = await fetch('/api/login', {
+        const resposta = await fetch('/api/clientes/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, senha })
