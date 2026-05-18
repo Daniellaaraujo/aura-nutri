@@ -577,3 +577,156 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor Aura Nutri rodando na porta ${PORT}`);
 });
+
+// ─── ROTAS ADMIN ─────────────────────────────────────────
+
+// Senha admin via variável de ambiente (ADMIN_PASSWORD no .env)
+function autenticarAdmin(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ erro: 'Acesso negado.' });
+  try {
+    const dados = jwt.verify(token, process.env.JWT_SECRET);
+    if (!dados.admin) return res.status(403).json({ erro: 'Sem permissão de admin.' });
+    next();
+  } catch {
+    res.status(401).json({ erro: 'Token inválido.' });
+  }
+}
+
+// LOGIN ADMIN
+app.post('/api/admin/login', (req, res) => {
+  const { senha } = req.body;
+  if (!senha || senha !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ erro: 'Senha incorreta.' });
+  }
+  const token = jwt.sign({ admin: true }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  res.json({ token });
+});
+
+// LISTAR TODOS OS PEDIDOS (com paginação e filtro por status)
+app.get('/api/admin/pedidos', autenticarAdmin, async (req, res) => {
+  try {
+    const pagina = parseInt(req.query.pagina) || 1;
+    const porPagina = 20;
+    const offset = (pagina - 1) * porPagina;
+    const statusFiltro = req.query.status || null;
+
+    const whereClause = statusFiltro ? `WHERE p.status = $3` : '';
+    const params = statusFiltro
+      ? [porPagina, offset, statusFiltro]
+      : [porPagina, offset];
+
+    const resultado = await pool.query(`
+      SELECT
+        p.id,
+        p.status,
+        p.total,
+        p.frete,
+        p.codigo_rastreio,
+        p.criado_em,
+        c.nome AS cliente_nome,
+        c.email AS cliente_email,
+        e.rua, e.numero, e.cidade, e.estado, e.cep,
+        pg.metodo AS metodo_pagamento,
+        pg.status AS status_pagamento,
+        json_agg(json_build_object(
+          'produto_id', ip.produto_id,
+          'nome', pr.nome,
+          'quantidade', ip.quantidade,
+          'preco', ip.preco_unit
+        )) AS itens
+      FROM pedidos p
+      LEFT JOIN clientes c ON c.id = p.cliente_id
+      LEFT JOIN enderecos e ON e.id = p.endereco_id
+      LEFT JOIN itens_pedido ip ON ip.pedido_id = p.id
+      LEFT JOIN produtos pr ON pr.id = ip.produto_id
+      LEFT JOIN pagamentos pg ON pg.pedido_id = p.id
+      ${whereClause}
+      GROUP BY p.id, c.id, e.id, pg.id
+      ORDER BY p.criado_em DESC
+      LIMIT $1 OFFSET $2
+    `, params);
+
+    const countParams = statusFiltro ? [statusFiltro] : [];
+    const countWhere = statusFiltro ? 'WHERE status = $1' : '';
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM pedidos ${countWhere}`,
+      countParams
+    );
+    const total = parseInt(countResult.rows[0].count);
+    const paginas = Math.ceil(total / porPagina);
+
+    res.json({ pedidos: resultado.rows, total, paginas, pagina_atual: pagina });
+  } catch (erro) {
+    console.error('Erro ao listar pedidos admin:', erro);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos.' });
+  }
+});
+
+// ATUALIZAR PEDIDO (status + código de rastreio)
+app.patch('/api/admin/pedidos/:id', autenticarAdmin, async (req, res) => {
+  try {
+    const { status, codigo_rastreio } = req.body;
+    const statusValidos = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
+    if (status && !statusValidos.includes(status)) {
+      return res.status(400).json({ erro: 'Status inválido.' });
+    }
+    await pool.query(
+      'UPDATE pedidos SET status = COALESCE($1, status), codigo_rastreio = COALESCE($2, codigo_rastreio), atualizado_em = NOW() WHERE id = $3',
+      [status || null, codigo_rastreio || null, req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (erro) {
+    console.error('Erro ao atualizar pedido:', erro);
+    res.status(500).json({ erro: 'Erro ao atualizar pedido.' });
+  }
+});
+
+// LISTAR PRODUTOS COM ESTOQUE
+app.get('/api/admin/produtos', autenticarAdmin, async (req, res) => {
+  try {
+    const resultado = await pool.query(`
+      SELECT id, nome, marca, preco, estoque, ativo
+      FROM produtos
+      ORDER BY estoque ASC
+    `);
+    res.json(resultado.rows);
+  } catch (erro) {
+    console.error('Erro ao listar estoque:', erro);
+    res.status(500).json({ erro: 'Erro ao buscar estoque.' });
+  }
+});
+
+// ATUALIZAR ESTOQUE DE UM PRODUTO
+app.patch('/api/admin/produtos/:id/estoque', autenticarAdmin, async (req, res) => {
+  try {
+    const { estoque } = req.body;
+    if (estoque === undefined || estoque < 0) {
+      return res.status(400).json({ erro: 'Valor de estoque inválido.' });
+    }
+    const resultado = await pool.query(
+      'UPDATE produtos SET estoque = $1 WHERE id = $2 RETURNING id, nome, estoque',
+      [estoque, req.params.id]
+    );
+    res.json(resultado.rows[0]);
+  } catch (erro) {
+    console.error('Erro ao atualizar estoque:', erro);
+    res.status(500).json({ erro: 'Erro ao atualizar estoque.' });
+  }
+});
+
+// ALERTAS — produtos com estoque baixo
+app.get('/api/admin/alertas', autenticarAdmin, async (req, res) => {
+  try {
+    const minimo = parseInt(process.env.ESTOQUE_MINIMO || '5');
+    const resultado = await pool.query(
+      'SELECT id, nome, marca, estoque FROM produtos WHERE estoque <= $1 AND ativo = true ORDER BY estoque ASC',
+      [minimo]
+    );
+    res.json({ minimo, produtos: resultado.rows });
+  } catch (erro) {
+    console.error('Erro ao buscar alertas:', erro);
+    res.status(500).json({ erro: 'Erro ao buscar alertas.' });
+  }
+});
