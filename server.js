@@ -384,6 +384,8 @@ app.post('/criar-checkout', async (req, res) => {
         numeroPedido,
         cliente_id: cliente_id || '',
         endereco_id: endereco_id || '',
+        itens: JSON.stringify(itens || []),
+        frete: String(frete || 0),
       },
       shipping_address_collection: {
         allowed_countries: ['BR', 'PT', 'GB', 'US'],
@@ -454,7 +456,7 @@ app.post('/webhook', async (req, res) => {
           endereco_id || null,
           'pago',
           parseFloat(total),
-          parseFloat(frete || 0)
+          parseFloat(session.metadata?.frete || 0)
         ]
       );
       const pedido_id = pedidoResult.rows[0].id;
@@ -466,7 +468,49 @@ app.post('/webhook', async (req, res) => {
         [pedido_id, 'cartao', 'aprovado', parseFloat(total), session.payment_intent]
       );
 
-      // 3. Salva também na tabela pedidos_aura (para manter histórico)
+      // 3. Salva os itens e diminui o estoque
+      const itensMeta = JSON.parse(session.metadata?.itens || '[]');
+
+      for (const item of itensMeta) {
+        // Verifica se tem estoque disponível
+        const estoqueAtual = await pool.query(
+          'SELECT estoque FROM produtos WHERE id = $1',
+          [item.produto_id]
+        );
+
+        if (estoqueAtual.rows.length === 0) continue;
+
+        const estoque = estoqueAtual.rows[0].estoque;
+
+        if (estoque < item.quantidade) {
+          console.warn(`⚠️ Estoque insuficiente para produto ${item.produto_id}`);
+          continue;
+        }
+
+        // Salva o item do pedido
+        await pool.query(
+          `INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unit)
+           VALUES ($1, $2, $3, $4)`,
+          [pedido_id, item.produto_id, item.quantidade, item.preco]
+        );
+
+        // Diminui o estoque
+        const atualizado = await pool.query(
+          `UPDATE produtos SET estoque = estoque - $1
+           WHERE id = $2
+           RETURNING id, nome, estoque`,
+          [item.quantidade, item.produto_id]
+        );
+
+        // Alerta se estoque ficar baixo (menos de 5 unidades)
+        const produto = atualizado.rows[0];
+        const ESTOQUE_MINIMO = parseInt(process.env.ESTOQUE_MINIMO || '5');
+        if (produto && produto.estoque <= ESTOQUE_MINIMO) {
+          console.warn(`⚠️ Estoque baixo: ${produto.nome} — ${produto.estoque} unidades`);
+        }
+      }
+
+      // 4. Salva também na tabela pedidos_aura (para manter histórico)
       await pool.query(
         `INSERT INTO pedidos_aura (numero_pedido, nome, email, endereco, valor, status, data)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -474,10 +518,10 @@ app.post('/webhook', async (req, res) => {
         [numeroPedido, nome, email, endereco, total, 'Pago', data]
       );
 
-      // 4. Salva no Google Sheets
+      // 5. Salva no Google Sheets
       await salvarNoPlanilha({ numeroPedido, data, nome, email, endereco, valor: total, status: 'Pago' });
 
-      // 5. Envia emails
+      // 6. Envia emails
       await emailConfirmacaoPedido(email, nome, endereco, numeroPedido, total);
       await emailAdmin(nome, email, endereco, total, numeroPedido);
 
