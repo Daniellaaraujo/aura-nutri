@@ -334,9 +334,15 @@
           <span>Subtotal</span>
           <span id="resumo-subtotal">—</span>
         </div>
+        <!-- Opções de frete -->
+        <div id="bloco-frete" style="margin:0.75rem 0;display:none;">
+          <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--soft);margin-bottom:0.5rem;">Escolha o frete</div>
+          <div id="frete-carregando" style="font-size:0.8rem;color:var(--soft);display:none;">Calculando frete...</div>
+          <div id="frete-opcoes" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
         <div class="resumo-linha">
           <span>Frete</span>
-          <span style="color:#16A34A;">Grátis</span>
+          <span id="resumo-frete">—</span>
         </div>
       </div>
 
@@ -377,6 +383,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
     // ── Estado da página ──
     let enderecoSelecionadoId = null;
     let enderecos = [];
+    let freteSelecionado = 0;
 
     // ── Helpers ──
     function pegarToken() { return localStorage.getItem('aura_token'); }
@@ -470,6 +477,9 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
       }
 
       document.getElementById('btn-pagar').disabled = false;
+
+      // Calcula frete para o CEP do endereço selecionado
+      if (end && end.cep) calcularFrete(end.cep);
     }
 
     // ── Carrega endereços do servidor ──
@@ -667,6 +677,61 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
         btn.disabled = false;
         btn.textContent = 'Ir para pagamento';
       }
+    }
+
+    // ── Calcula frete via Melhor Envio ──
+    async function calcularFrete(cep) {
+      const blocoFrete  = document.getElementById('bloco-frete');
+      const carregando  = document.getElementById('frete-carregando');
+      const opcoes      = document.getElementById('frete-opcoes');
+
+      freteSelecionado = 0;
+      document.getElementById('resumo-frete').textContent = '—';
+      blocoFrete.style.display  = 'block';
+      carregando.style.display  = 'block';
+      opcoes.innerHTML = '';
+
+      try {
+        const r = await fetch(`${API_BASE}/api/frete/calcular`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cep_destino: cep })
+        });
+
+        const dados = await r.json();
+        carregando.style.display = 'none';
+
+        if (!r.ok || dados.erro) {
+          opcoes.innerHTML = `<p style="font-size:0.8rem;color:#DC2626;">${dados.erro || 'Frete indisponível para este CEP.'}</p>`;
+          return;
+        }
+
+        opcoes.innerHTML = dados.map(op => `
+          <label style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;border:1px solid rgba(184,150,90,0.2);border-radius:0.5rem;cursor:pointer;font-size:0.82rem;background:var(--white);">
+            <input type="radio" name="frete" value="${op.preco}" onchange="selecionarFrete(${op.preco})" style="accent-color:var(--gold);" />
+            <div style="flex:1;">
+              <div style="font-weight:500;color:var(--dark);">${op.empresa} — ${op.nome}</div>
+              <div style="color:var(--soft);font-size:0.75rem;">Prazo: ${op.prazo} dia${op.prazo > 1 ? 's' : ''} útil${op.prazo > 1 ? 'eis' : ''}</div>
+            </div>
+            <div style="font-weight:600;color:var(--gold);white-space:nowrap;">R$ ${op.preco.toFixed(2).replace('.',',')}</div>
+          </label>
+        `).join('');
+
+      } catch {
+        carregando.style.display = 'none';
+        opcoes.innerHTML = '<p style="font-size:0.8rem;color:#DC2626;">Erro ao calcular frete. Tente novamente.</p>';
+      }
+    }
+
+    // ── Seleciona opção de frete ──
+    function selecionarFrete(preco) {
+      freteSelecionado = preco;
+      document.getElementById('resumo-frete').textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
+
+      // Recalcula total
+      const subtotalTxt = document.getElementById('resumo-subtotal').textContent;
+      const subtotal = parseFloat(subtotalTxt.replace('R$ ', '').replace(',', '.')) || 0;
+      document.getElementById('resumo-total').textContent = 'R$ ' + (subtotal + preco).toFixed(2).replace('.', ',');
     }
 
     // ── Renderiza resumo do carrinho no painel direito ──
