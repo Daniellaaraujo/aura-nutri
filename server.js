@@ -44,7 +44,7 @@ function autenticar(req, res, next) {
 // ─── ROTAS DE CLIENTE ────────────────────────────────────
 
 // CADASTRO — cria novo cliente
-app.post('/api/cadastro', async (req, res) => {
+app.post('/api/clientes/cadastro', async (req, res) => {
   try {
     const { nome, email, senha, telefone, cpf } = req.body;
 
@@ -78,7 +78,7 @@ app.post('/api/cadastro', async (req, res) => {
 });
 
 // LOGIN — autentica cliente e retorna token
-app.post('/api/login', async (req, res) => {
+app.post('/api/clientes/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
 
