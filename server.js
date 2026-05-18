@@ -351,7 +351,7 @@ async function emailAdmin(nome, email, endereco, valor, numeroPedido) {
 app.post('/criar-checkout', async (req, res) => {
   try {
     // Pega os dados do carrinho enviados pelo frontend
-    const { itens, cliente_id, endereco_id } = req.body;
+    const { itens, cliente_id, endereco_id, frete } = req.body;
 
     const numeroPedido = await gerarNumeroPedido();
 
@@ -391,7 +391,7 @@ app.post('/criar-checkout', async (req, res) => {
       shipping_options: [{
         shipping_rate_data: {
           type: 'fixed_amount',
-          fixed_amount: { amount: 0, currency: 'brl' },
+          fixed_amount: { amount: Math.round((frete || 0) * 100), currency: 'brl' },
           display_name: 'Frete incluso',
           delivery_estimate: {
             minimum: { unit: 'business_day', value: 3 },
@@ -454,7 +454,7 @@ app.post('/webhook', async (req, res) => {
           endereco_id || null,
           'pago',
           parseFloat(total),
-          0
+          parseFloat(frete || 0)
         ]
       );
       const pedido_id = pedidoResult.rows[0].id;
