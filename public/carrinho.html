@@ -769,67 +769,11 @@
   }
 
   // ── CHECKOUT ──
-  async function irParaCheckout() {
+  function irParaCheckout() {
     const ids = Object.keys(carrinho);
     if (ids.length === 0) return;
-
-    const btn = document.getElementById('btn-checkout');
-    btn.classList.add('loading');
-    btn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10" stroke-dasharray="40" stroke-dashoffset="20">
-          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
-        </circle>
-      </svg>
-      Redirecionando...
-    `;
-
-    // Montar lista de itens para o backend
-    const itens = ids.map(id => {
-      const prod = PRODUTOS.find(p => p.id === id);
-      return {
-        produto_id: id,
-        nome: prod.nome,
-        preco: prod.preco,
-        quantidade: carrinho[id],
-        // stripe_price_id: prod.stripe_price_id // descomente quando tiver os IDs
-      };
-    });
-
-    try {
-      const res = await fetch('/criar-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Se o cliente estiver logado, inclua o token:
-          // 'Authorization': 'Bearer ' + localStorage.getItem('token')
-        },
-        body: JSON.stringify({
-          itens,
-          frete: freteValor,
-          cupom: document.getElementById('coupon-input').value.trim().toUpperCase() || null,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Erro ao criar sessão de checkout');
-      const data = await res.json();
-
-      // Redireciona para a página de pagamento do Stripe
-      if (data.url) {
-        localStorage.removeItem('aura_carrinho');
-        window.location.href = data.url;
-      } else {
-        throw new Error('URL de checkout não retornada');
-      }
-    } catch (err) {
-      console.error(err);
-      mostrarToast('Erro ao redirecionar. Tente novamente.');
-      btn.classList.remove('loading');
-      btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Finalizar compra
-      `;
-    }
+    // Redireciona para a página de escolha de endereço
+    window.location.href = '/endereco-checkout.html';
   }
 
   // ── TOAST ──
