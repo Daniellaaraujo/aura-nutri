@@ -654,10 +654,10 @@
         const qty = carrinho[id];
         return `
           <div class="cart-item">
-            <div class="cart-item-emoji">${prod.emoji}</div>
+            <div class="cart-item-emoji">${prod.nome.substring(0,2).toUpperCase()}</div>
             <div class="cart-item-info">
               <div class="cart-item-name">${prod.nome}</div>
-              <div class="cart-item-unit">R$ ${prod.preco.toFixed(2).replace('.', ',')} / un.</div>
+              <div class="cart-item-unit">R$ ${parseFloat(prod.preco).toFixed(2).replace('.', ',')} / un.</div>
             </div>
             <div class="cart-item-controls">
               <button class="qty-btn" onclick="alterarQtd('${id}', -1)">−</button>
