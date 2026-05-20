@@ -775,7 +775,7 @@
   async function contarStatus(status) {
     try {
       const params = status ? `?status=${status}` : '';
-      const resp = await fetch(`${API}/api/admin/pedidos${params}&pagina=1`, {
+      const resp = await fetch(`${API}/api/admin/pedidos${params ? params+'&' : '?'}pagina=1`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await resp.json();
