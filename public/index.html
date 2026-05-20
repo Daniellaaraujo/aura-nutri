@@ -556,13 +556,8 @@
     // PRODUTOS NA HOME — mesma lista do carrinho
     // ═══════════════════════════════════════════
 
-    const PRODUTOS = [
-      { id: 'coenzima-q10',   nome: 'Coenzima Q10',     descricao: 'Antioxidante premium, 200mg por cápsula.', preco: 190.00, emoji: 'Q10' },
-      { id: 'colageno-marino',nome: 'Colágeno Marinho',  descricao: 'Hidrolisado tipo I e II, 10g por dose.',   preco: 145.00, emoji: 'CM'  },
-      { id: 'vitamina-d3',    nome: 'Vitamina D3 + K2',  descricao: 'Sinergia ideal para ossos e imunidade.',   preco: 89.00,  emoji: 'D3'  },
-      { id: 'omega-3',        nome: 'Ômega-3 Ultra',     descricao: 'Alta concentração de EPA + DHA.',           preco: 120.00, emoji: 'Ω3'  },
-      { id: 'magnesio',       nome: 'Magnésio Quelato',  descricao: 'Alta biodisponibilidade, sem laxante.',     preco: 75.00,  emoji: 'Mg'  },
-    ];
+    let PRODUTOS = [];
+    
 
     function adicionarAoCarrinhoHome(id) {
       try {
@@ -584,7 +579,7 @@
       if (!grid) return;
       grid.innerHTML = PRODUTOS.map(p => `
         <div class="prod-card">
-          <div class="prod-img">${p.emoji}</div>
+          <div class="prod-img">${p.nome.substring(0,2).toUpperCase()}</div>
           <div class="prod-body">
             <div class="prod-nome">${p.nome}</div>
             <div class="prod-desc">${p.descricao}</div>
@@ -597,7 +592,14 @@
       `).join('');
     }
 
+    async function carregarProdutosHome() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
     renderProdutosHome();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutosHome();
 
     // ═══════════════════════════════════════════
     // ESTADO DO CLIENTE
