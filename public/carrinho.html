@@ -749,57 +749,121 @@
     setTimeout(() => toast.classList.remove('show'), 2200);
   }
 
+
   // ── INIT ──
   async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    async function carregarProdutos() {
-  try {
-    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
-    PRODUTOS = await resp.json();
-    renderProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-    renderCarrinho();
-  } catch(e) { console.error('Erro ao carregar produtos:', e); }
-}
-carregarProdutos();
-  renderCarrinho();
+    try {
+      // Mostra loading nos produtos
+      document.getElementById('products-grid').innerHTML =
+        '<p style="color:var(--text-light);font-size:0.85rem;padding:1rem;">Carregando produtos...</p>';
+
+      const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+
+      if (!resp.ok) throw new Error('Erro ao buscar produtos');
+
+      PRODUTOS = await resp.json();
+
+      // Filtra só produtos com estoque > 0
+      const disponiveis = PRODUTOS.filter(p => p.estoque > 0);
+
+      if (disponiveis.length === 0) {
+        document.getElementById('products-grid').innerHTML =
+          '<p style="color:var(--text-light);font-size:0.85rem;padding:1rem;">Nenhum produto disponível no momento.</p>';
+      } else {
+        PRODUTOS = disponiveis;
+        renderProdutos();
+      }
+
+      renderCarrinho();
+    } catch(e) {
+      console.error('Erro ao carregar produtos:', e);
+      document.getElementById('products-grid').innerHTML =
+        '<p style="color:var(--red);font-size:0.85rem;padding:1rem;">Erro ao carregar produtos. Recarregue a página.</p>';
+    }
+  }
+
+  carregarProdutos();
+
+  // ── ERRO DE ESTOQUE NO CHECKOUT ──
+  // Sobrescreve a função irParaCheckout para verificar estoque antes
+  async function irParaCheckout() {
+    const ids = Object.keys(carrinho);
+    if (ids.length === 0) return;
+
+    const btnCheckout = document.getElementById('btn-checkout');
+    btnCheckout.disabled = true;
+    btnCheckout.textContent = 'Verificando...';
+
+    try {
+      // Verifica estoque de cada item antes de avançar
+      for (const id of ids) {
+        const qtdNoCarrinho = carrinho[id];
+        const prod = PRODUTOS.find(p => String(p.id) === String(id));
+
+        if (!prod) continue;
+
+        // Busca estoque atualizado do servidor
+        const resp = await fetch(`https://backend-suplementos-0ul1.onrender.com/api/produtos/${id}`);
+        const prodAtual = await resp.json();
+
+        if (prodAtual.estoque < qtdNoCarrinho) {
+          // Estoque insuficiente — avisa o cliente
+          mostrarErroPersistente(
+            `"${prod.nome}" tem apenas ${prodAtual.estoque} unidade(s) disponível(is). ` +
+            `Você tem ${qtdNoCarrinho} no carrinho. Por favor, reduza a quantidade.`
+          );
+
+          // Reduz automaticamente a quantidade para o máximo disponível
+          if (prodAtual.estoque === 0) {
+            removerItem(id);
+          } else {
+            carrinho[id] = prodAtual.estoque;
+            localStorage.setItem('aura_carrinho', JSON.stringify(carrinho));
+            renderCarrinho();
+          }
+
+          btnCheckout.disabled = false;
+          btnCheckout.textContent = 'Finalizar Compra';
+          return; // Para aqui, não avança
+        }
+      }
+
+      // Tudo ok — avança para endereço
+      window.location.href = '/endereco-checkout.html';
+
+    } catch(e) {
+      console.error('Erro ao verificar estoque:', e);
+      // Se não conseguiu verificar, avança mesmo assim (o servidor vai bloquear se precisar)
+      window.location.href = '/endereco-checkout.html';
+    }
+  }
+
+  // Mensagem de erro que fica visível (não some em 2s como o toast)
+  function mostrarErroPersistente(mensagem) {
+    // Remove erro anterior se houver
+    const anterior = document.getElementById('erro-estoque');
+    if (anterior) anterior.remove();
+
+    const div = document.createElement('div');
+    div.id = 'erro-estoque';
+    div.style.cssText = `
+      background: #fef0ef;
+      border: 1px solid #f5c6c2;
+      color: #c0392b;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      margin-top: 12px;
+      line-height: 1.5;
+    `;
+    div.textContent = '⚠️ ' + mensagem;
+
+    const btnCheckout = document.getElementById('btn-checkout');
+    btnCheckout.parentNode.insertBefore(div, btnCheckout.nextSibling);
+
+    // Some após 8 segundos
+    setTimeout(() => div.remove(), 8000);
+  }
+
 </script>
 </body>
-</html>
