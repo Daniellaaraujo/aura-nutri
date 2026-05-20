@@ -554,15 +554,8 @@
 <script>
   // ── DADOS DOS PRODUTOS ──
   // Edite esta lista para adicionar/remover produtos
-  const PRODUTOS = [
-    {
-      id: 'coenzima-q10',
-      nome: 'Coenzima Q10',
-      descricao: 'Antioxidante premium, 200mg por cápsula.',
-      preco: 190.00,
-      emoji: 'Q10',
-      // stripe_price_id: 'price_xxxx' // descomente quando tiver os IDs do Stripe
-    },
+  let PRODUTOS = [];
+  
     {
       id: 'colageno-marino',
       nome: 'Colágeno Marinho',
@@ -611,12 +604,12 @@
     const grid = document.getElementById('products-grid');
     grid.innerHTML = PRODUTOS.map(p => `
       <div class="product-card" onclick="adicionarAoCarrinho('${p.id}')">
-        <div class="product-img">${p.emoji}</div>
+        <div class="product-img">${p.nome.substring(0,2).toUpperCase()}</div>
         <div class="product-info">
           <div class="product-name">${p.nome}</div>
           <div class="product-desc">${p.descricao}</div>
           <div class="product-footer">
-            <span class="product-price">R$ ${p.preco.toFixed(2).replace('.', ',')}</span>
+            <span class="product-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>
             <button class="btn-add" id="btn-add-${p.id}" onclick="event.stopPropagation(); adicionarAoCarrinho('${p.id}')">
               + Adicionar
             </button>
@@ -785,7 +778,55 @@
   }
 
   // ── INIT ──
-  renderProdutos();
+  async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    async function carregarProdutos() {
+  try {
+    const resp = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+    PRODUTOS = await resp.json();
+    renderProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
+    renderCarrinho();
+  } catch(e) { console.error('Erro ao carregar produtos:', e); }
+}
+carregarProdutos();
   renderCarrinho();
 </script>
 </body>
