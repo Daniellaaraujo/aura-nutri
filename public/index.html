@@ -584,7 +584,7 @@
             <div class="prod-nome">${p.nome}</div>
             <div class="prod-desc">${p.descricao}</div>
             <div class="prod-footer">
-              <span class="prod-preco">R$ ${p.preco.toFixed(2).replace('.', ',')}</span>
+              <span class="prod-preco">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>
               <button class="btn-add-home" id="btn-home-${p.id}" onclick="adicionarAoCarrinhoHome('${p.id}')">+ Carrinho</button>
             </div>
           </div>
