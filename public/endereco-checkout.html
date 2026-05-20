@@ -628,7 +628,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
 
         // Monta a lista de itens para o backend
         // Aqui usamos o array fixo de produtos (igual ao index.html)
-        const PRODUTOS = [
+        const PRODUTOS = window._PRODUTOS || [
           { id: 'coenzima-q10',    nome: 'Coenzima Q10',     preco: 190.00 },
           { id: 'colageno-marino', nome: 'Colágeno Marinho',  preco: 145.00 },
           { id: 'vitamina-d3',     nome: 'Vitamina D3 + K2',  preco: 89.00  },
@@ -639,7 +639,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
         const itensSelecionados = Object.entries(carrinho)
           .filter(([, qtd]) => qtd > 0)
           .map(([id, qtd]) => {
-            const prod = PRODUTOS.find(p => p.id === id);
+            const prod = PRODUTOS.find(p => String(p.id) === String(id));
             return prod ? { nome: prod.nome, preco: prod.preco, quantidade: qtd } : null;
           })
           .filter(Boolean);
@@ -736,7 +736,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
 
     // ── Renderiza resumo do carrinho no painel direito ──
     function renderResumo() {
-      const PRODUTOS = [
+      const PRODUTOS = window._PRODUTOS || [
         { id: 'coenzima-q10',    nome: 'Coenzima Q10',     preco: 190.00 },
         { id: 'colageno-marino', nome: 'Colágeno Marinho',  preco: 145.00 },
         { id: 'vitamina-d3',     nome: 'Vitamina D3 + K2',  preco: 89.00  },
@@ -763,7 +763,7 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
         subtotal = 19;
       } else {
         container.innerHTML = itens.map(([id, qtd]) => {
-          const prod = PRODUTOS.find(p => p.id === id);
+          const prod = PRODUTOS.find(p => String(p.id) === String(id));
           if (!prod) return '';
           const total = prod.preco * qtd;
           subtotal += total;
@@ -784,7 +784,9 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
     }
 
     // ── Inicia a página ──
-    renderResumo();
+  fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos')
+  .then(r => r.json())
+  .then(data => { window._PRODUTOS = data; renderResumo(); });
     carregarEnderecos();
   </script>
 
