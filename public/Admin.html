@@ -779,11 +779,6 @@
     } catch(e) {
       tbody.innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar pedidos.</td></tr>';
     }
-
-      renderizarPaginacao(data.paginas, data.pagina_atual);
-    } catch(e) {
-      tbody.innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar pedidos.</td></tr>';
-    }
   }
 
   async function carregarStats() {
