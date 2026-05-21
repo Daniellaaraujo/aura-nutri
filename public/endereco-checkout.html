@@ -628,15 +628,18 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
 
         // Monta a lista de itens para o backend
         // Aqui usamos o array fixo de produtos (igual ao index.html)
-        const PRODUTOS = window._PRODUTOS || [
-       
-        ];
+        const PRODUTOS = window._PRODUTOS || [];
 
         const itensSelecionados = Object.entries(carrinho)
           .filter(([, qtd]) => qtd > 0)
           .map(([id, qtd]) => {
             const prod = PRODUTOS.find(p => String(p.id) === String(id));
-            return prod ? { nome: prod.nome, preco: prod.preco, quantidade: qtd } : null;
+            return prod ? {
+              produto_id: prod.id,
+              nome:       prod.nome,
+              preco:      parseFloat(prod.preco),
+              quantidade: qtd
+            } : null;
           })
           .filter(Boolean);
 
