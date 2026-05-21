@@ -627,7 +627,15 @@ const API_BASE = 'https://backend-suplementos-0ul1.onrender.com';
         const carrinho = JSON.parse(localStorage.getItem('aura_carrinho') || '{}');
 
         // Monta a lista de itens para o backend
-        // Aqui usamos o array fixo de produtos (igual ao index.html)
+        // Se produtos ainda não carregaram, busca agora
+        if (!window._PRODUTOS || window._PRODUTOS.length === 0) {
+          try {
+            const r = await fetch('https://backend-suplementos-0ul1.onrender.com/api/produtos');
+            window._PRODUTOS = await r.json();
+          } catch(e) {
+            console.error('Erro ao buscar produtos:', e);
+          }
+        }
         const PRODUTOS = window._PRODUTOS || [];
 
         const itensSelecionados = Object.entries(carrinho)
