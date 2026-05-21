@@ -36,7 +36,7 @@ function autenticar(req, res, next) {
     const dados = jwt.verify(token, process.env.JWT_SECRET);
     req.cliente = dados; // salva os dados do cliente na requisição
     next();
-  } catch {
+  } catch(e) {
     res.status(401).json({ erro: 'Token inválido ou expirado. Faça login novamente.' });
   }
 }
@@ -471,7 +471,13 @@ app.post('/webhook', async (req, res) => {
       // 3. Salva os itens e diminui o estoque
       const itensMeta = JSON.parse(session.metadata?.itens || '[]');
 
+      console.log(`📦 Itens recebidos no webhook:`, JSON.stringify(itensMeta));
+
       for (const item of itensMeta) {
+        if (!item.produto_id) {
+          console.warn(`⚠️ Item sem produto_id ignorado:`, item.nome);
+          continue;
+        }
         // Verifica se tem estoque disponível
         const estoqueAtual = await pool.query(
           'SELECT estoque FROM produtos WHERE id = $1',
@@ -589,7 +595,7 @@ function autenticarAdmin(req, res, next) {
     const dados = jwt.verify(token, process.env.JWT_SECRET);
     if (!dados.admin) return res.status(403).json({ erro: 'Sem permissão de admin.' });
     next();
-  } catch {
+  } catch(e) {
     res.status(401).json({ erro: 'Token inválido.' });
   }
 }
