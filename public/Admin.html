@@ -674,7 +674,7 @@
       token = data.token;
       localStorage.setItem('admin_token', token);
       mostrarDashboard();
-    } catch {
+    } catch(e) {
       erro.style.display = 'block';
     }
   }
@@ -737,7 +737,7 @@
         // itens pode vir como string JSON ou já como array
         let itens = p.itens;
         if (typeof itens === 'string') {
-          try { itens = JSON.parse(itens); } catch { itens = []; }
+          try { itens = JSON.parse(itens); } catch(e) { itens = []; }
         }
         if (!Array.isArray(itens)) itens = [];
 
@@ -776,12 +776,12 @@
       `}).join('');
 
       renderizarPaginacao(data.paginas, data.pagina_atual);
-    } catch {
+    } catch(e) {
       tbody.innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar pedidos.</td></tr>';
     }
 
       renderizarPaginacao(data.paginas, data.pagina_atual);
-    } catch {
+    } catch(e) {
       tbody.innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar pedidos.</td></tr>';
     }
   }
@@ -806,7 +806,7 @@
       });
       const data = await resp.json();
       return data.total || 0;
-    } catch { return '—'; }
+    } catch(e) { return '—'; }
   }
 
   // ─── Modal ─────────────────────────────────────────────────────────────────
@@ -841,7 +841,7 @@
       fecharModal();
       carregarPedidos();
       mostrarToast('Pedido atualizado!');
-    } catch {
+    } catch(e) {
       mostrarToast('Erro ao atualizar pedido.');
     }
   }
@@ -889,7 +889,7 @@
           </div>
         `;
       }).join('');
-    } catch {
+    } catch(e) {
       el.innerHTML = '<div class="loading">Erro ao carregar produtos.</div>';
     }
   }
@@ -913,7 +913,7 @@
       input.value = '';
       carregarEstoque();
       mostrarToast('Estoque atualizado!');
-    } catch {
+    } catch(e) {
       mostrarToast('Erro ao atualizar estoque.');
     }
   }
